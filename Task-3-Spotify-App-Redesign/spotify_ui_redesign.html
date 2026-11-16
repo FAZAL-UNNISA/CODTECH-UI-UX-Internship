@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify UI Redesign - UX Enhanced</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        spotifyBg: '#121212',
+                        spotifyCard: '#282828',
+                        spotifyCardHover: '#333333',
+                        spotifyGreen: '#1DB954',
+                        spotifyGreenHover: '#1ed760',
+                        spotifySubtext: '#B3B3B3'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #080808;
+            color: #FFFFFF;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Hide scrollbars for horizontal carousels while keeping scroll functionality */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* Custom thin scrollbar for main mobile container on desktop */
+        .app-scroll::-webkit-scrollbar {
+            width: 5px;
+        }
+        .app-scroll::-webkit-scrollbar-track {
+            background: #121212;
+        }
+        .app-scroll::-webkit-scrollbar-thumb {
+            background: #333333;
+            border-radius: 10px;
+        }
+        .app-scroll::-webkit-scrollbar-thumb:hover {
+            background: #1DB954;
+        }
+        @keyframes pulse-eq {
+            0%, 100% { height: 4px; }
+            50% { height: 14px; }
+        }
+        .eq-bar-1 { animation: pulse-eq 0.7s infinite ease-in-out; }
+        .eq-bar-2 { animation: pulse-eq 0.5s infinite ease-in-out 0.2s; }
+        .eq-bar-3 { animation: pulse-eq 0.8s infinite ease-in-out 0.1s; }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center sm:py-6">
+
+    <!-- Responsive Mobile App Frame (Full width on mobile, sleek phone frame on desktop) -->
+    <div class="w-full sm:w-[420px] h-screen sm:h-[850px] bg-spotifyBg sm:rounded-[38px] sm:border-[6px] sm:border-[#242424] shadow-[0_25px_70px_-15px_rgba(0,0,0,0.9)] flex flex-col relative overflow-hidden">
+
+        <!-- Sticky Top Header: High-Visibility Search + Greeting + Filter Pills -->
+        <header class="sticky top-0 z-30 bg-spotifyBg/95 backdrop-blur-md pt-4 pb-3 px-4 border-b border-white/5 space-y-3.5">
+            
+            <!-- 1. Prominent High-Visibility Search Bar -->
+            <div class="relative group">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-spotifySubtext group-focus-within:text-spotifyGreen transition-colors text-sm"></i>
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    placeholder="Search for artists, songs, podcasts..." 
+                    class="w-full bg-[#242424] hover:bg-[#2a2a2a] focus:bg-[#2a2a2a] text-white placeholder-spotifySubtext text-sm rounded-full py-2.5 pl-10 pr-9 border border-white/10 focus:border-spotifyGreen focus:outline-none transition-all shadow-inner"
+                >
+                <button id="clearSearchBtn" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-spotifySubtext hover:text-white text-xs p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- 2. Personalised Greeting & Avatar -->
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="relative">
+                        <img 
+                            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80" 
+                            onerror="this.src='https://placehold.co/80x80/1DB954/000000?text=A'"
+                            alt="Alex Avatar" 
+                            class="w-9 h-9 rounded-full object-cover ring-2 ring-spotifyGreen/70"
+                        >
+                        <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-spotifyGreen rounded-full border-2 border-spotifyBg"></span>
+                    </div>
+                    <div>
+                        <h1 id="greetingText" class="text-xl font-extrabold tracking-tight text-white leading-tight">Good Evening, Alex!</h1>
+                    </div>
+                </div>
+                <!-- Time-of-day quick toggle for previewing dynamic greeting -->
+                <button id="cycleGreetingBtn" title="Cycle Time Greeting" class="text-[11px] bg-white/5 hover:bg-white/10 text-spotifySubtext hover:text-white px-2.5 py-1 rounded-full transition-colors flex items-center gap-1">
+                    <i class="fa-regular fa-clock text-spotifyGreen"></i>
+                    <span id="timeBadge">Evening</span>
+                </button>
+            </div>
+
+            <!-- Category Filter Pills (All, Music, Podcasts) -->
+            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar" id="categoryPills">
+                <button data-cat="All" class="cat-pill active px-3.5 py-1.5 rounded-full text-xs font-semibold bg-spotifyGreen text-black transition-all">All</button>
+                <button data-cat="Music" class="cat-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-spotifyCard text-white hover:bg-spotifyCardHover transition-all">Music</button>
+                <button data-cat="Podcasts" class="cat-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-spotifyCard text-white hover:bg-spotifyCardHover transition-all">Podcasts</button>
+            </div>
+        </header>
+
+        <!-- Scrollable Main Content Feed -->
+        <main id="mainFeed" class="flex-1 overflow-y-auto app-scroll px-4 pt-3 pb-36 space-y-6">
+
+            <!-- Active Filter Banner (Hidden unless Mood or Search is active) -->
+            <div id="activeFilterBanner" class="hidden items-center justify-between bg-spotifyGreen/15 border border-spotifyGreen/30 rounded-xl px-3.5 py-2">
+                <div class="flex items-center gap-2 text-xs">
+                    <i class="fa-solid fa-filter text-spotifyGreen"></i>
+                    <span id="filterStatusText" class="text-white font-medium">Showing: Chill</span>
+                </div>
+                <button id="resetAllBtn" class="text-xs font-bold text-spotifyGreen hover:underline">Clear</button>
+            </div>
+
+            <!-- 3. Recently Played Carousel (Top Placement) -->
+            <section id="recentlyPlayedSection" class="space-y-2.5">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-base font-bold tracking-tight text-white">Recently Played</h2>
+                    <span class="text-[11px] text-spotifySubtext font-medium">Jump right back</span>
+                </div>
+                <div id="recentlyPlayedList" class="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+                    <!-- Populated via JS -->
+                </div>
+            </section>
+
+            <!-- 4. Your Top Pinned Mixes (2-Column Compact Grid) -->
+            <section id="pinnedMixesSection" class="space-y-2.5">
+                <h2 class="text-base font-bold tracking-tight text-white">Your Top Pinned Mixes</h2>
+                <div id="pinnedMixesGrid" class="grid grid-cols-2 gap-2">
+                    <!-- Populated via JS -->
+                </div>
+            </section>
+
+            <!-- 5. More like Stephen Dawes (Horizontal Card Shelf) -->
+            <section id="moreLikeSection" class="space-y-2.5">
+                <div class="flex items-center gap-2.5">
+                    <img 
+                        src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100&auto=format&fit=crop&q=80" 
+                        onerror="this.src='https://placehold.co/60x60/282828/FFFFFF?text=SD'"
+                        alt="Stephen Dawes" 
+                        class="w-9 h-9 rounded-full object-cover"
+                    >
+                    <div>
+                        <p class="text-[10px] uppercase tracking-wider text-spotifySubtext font-semibold">More like</p>
+                        <h2 class="text-base font-bold text-white leading-tight">Stephen Dawes</h2>
+                    </div>
+                </div>
+                <div id="moreLikeList" class="flex gap-3.5 overflow-x-auto no-scrollbar pb-1">
+                    <!-- Populated via JS -->
+                </div>
+            </section>
+
+            <!-- 6. Trending Songs (Interactive Ranked List/Carousel with Upward Green Arrows) -->
+            <section id="trendingSection" class="space-y-2.5">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-base font-bold tracking-tight text-white">Trending Songs</h2>
+                        <span class="px-1.5 py-0.5 text-[10px] font-bold bg-spotifyGreen/20 text-spotifyGreen rounded">LIVE</span>
+                    </div>
+                    <span class="text-xs text-spotifySubtext">Top Charts</span>
+                </div>
+                <div id="trendingList" class="space-y-2">
+                    <!-- Populated via JS -->
+                </div>
+            </section>
+
+            <!-- 7. Moods & Genres (Colorful Interactive Pill Selector) -->
+            <section id="moodsSection" class="space-y-2.5">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-base font-bold tracking-tight text-white">Moods & Genres</h2>
+                    <span class="text-[11px] text-spotifySubtext">Tap to filter</span>
+                </div>
+                <div id="moodPillsContainer" class="flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
+                    <!-- Populated via JS -->
+                </div>
+            </section>
+
+            <!-- 8. Jump back in -->
+            <section id="jumpBackSection" class="space-y-2.5">
+                <h2 class="text-base font-bold tracking-tight text-white">Jump back in</h2>
+                <div id="jumpBackGrid" class="grid grid-cols-2 gap-3">
+                    <!-- Populated via JS -->
+                </div>
+            </section>
+
+            <!-- Empty Search Fallback -->
+            <div id="emptyState" class="hidden py-12 text-center space-y-2">
+                <i class="fa-solid fa-compact-disc text-3xl text-spotifySubtext"></i>
+                <p class="text-sm font-semibold text-white">No tracks or mixes found</p>
+                <p class="text-xs text-spotifySubtext">Try searching another song, artist, or mood</p>
+            </div>
+        </main>
+
+        <!-- 9. Persistent Floating Mini-Player + Bottom Navigation Bar -->
+        <div class="absolute bottom-0 inset-x-0 z-40 bg-gradient-to-t from-black via-black/95 to-transparent pt-3">
+            
+            <!-- Floating Mini-Player -->
+            <div class="mx-2.5 mb-2 bg-[#262322] border border-white/10 rounded-xl p-2 shadow-2xl relative overflow-hidden">
+                <div class="flex items-center justify-between gap-2.5">
+                    <!-- Track Cover & Info -->
+                    <div class="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer" id="miniPlayerInfo">
+                        <img 
+                            id="playerCover" 
+                            src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=120&auto=format&fit=crop&q=80" 
+                            onerror="this.src='https://placehold.co/80x80/282828/FFFFFF?text=♪'"
+                            alt="Now Playing" 
+                            class="w-10 h-10 rounded-lg object-cover flex-shrink-0 shadow"
+                        >
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-1.5">
+                                <p id="playerTitle" class="text-xs font-bold text-white truncate">Progress</p>
+                                <!-- Animated Equalizer bars when playing -->
+                                <div id="eqVisualizer" class="hidden items-end gap-[2px] h-3">
+                                    <span class="w-[2px] bg-spotifyGreen eq-bar-1"></span>
+                                    <span class="w-[2px] bg-spotifyGreen eq-bar-2"></span>
+                                    <span class="w-[2px] bg-spotifyGreen eq-bar-3"></span>
+                                </div>
+                            </div>
+                            <p id="playerArtist" class="text-[11px] text-spotifySubtext truncate">Kill ROB Bailey</p>
+                        </div>
+                    </div>
+
+                    <!-- Mini-Player Controls -->
+                    <div class="flex items-center gap-3 pr-1">
+                        <button id="deviceBtn" title="Connect to a device" class="text-spotifySubtext hover:text-spotifyGreen transition-colors text-sm">
+                            <i class="fa-solid fa-computer"></i>
+                        </button>
+                        <button id="likeTrackBtn" title="Save to Liked Songs" class="text-spotifySubtext hover:text-white transition-transform active:scale-90 text-base">
+                            <i class="fa-solid fa-circle-plus"></i>
+                        </button>
+                        <button id="playPauseBtn" title="Play / Pause" class="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow">
+                            <i id="playPauseIcon" class="fa-solid fa-play text-xs ml-0.5"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Interactive Scrubbing Progress Bar -->
+                <div id="progressBarContainer" class="mt-2 w-full h-1 bg-white/20 rounded-full cursor-pointer relative group">
+                    <div id="progressFill" class="h-full bg-white group-hover:bg-spotifyGreen rounded-full transition-all duration-150" style="width: 34%;"></div>
+                </div>
+            </div>
+
+            <!-- Bottom Navigation Bar -->
+            <nav class="bg-spotifyBg/95 backdrop-blur-lg border-t border-white/5 px-6 py-2 flex items-center justify-between text-[10px] font-medium">
+                <button data-nav="Home" class="nav-tab active flex flex-col items-center gap-1 text-white transition-colors">
+                    <i class="fa-solid fa-house text-base"></i>
+                    <span>Home</span>
+                </button>
+                <button data-nav="Search" class="nav-tab flex flex-col items-center gap-1 text-spotifySubtext hover:text-white transition-colors">
+                    <i class="fa-solid fa-magnifying-glass text-base"></i>
+                    <span>Search</span>
+                </button>
+                <button data-nav="Library" class="nav-tab flex flex-col items-center gap-1 text-spotifySubtext hover:text-white transition-colors">
+                    <i class="fa-solid fa-lines-leaning text-base"></i>
+                    <span>Your Library</span>
+                </button>
+                <button data-nav="Premium" class="nav-tab flex flex-col items-center gap-1 text-spotifySubtext hover:text-white transition-colors">
+                    <i class="fa-brands fa-spotify text-base"></i>
+                    <span>Premium</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Subtle Toast Feedback Banner -->
+        <div id="toastMsg" class="pointer-events-none opacity-0 transition-opacity duration-300 absolute top-20 left-1/2 -translate-x-1/2 z-50 bg-spotifyGreen text-black text-xs font-bold px-4 py-2 rounded-full shadow-lg whitespace-nowrap">
+            Added to Liked Songs
+        </div>
+
+    </div>
+
+    <script>
+        // --- MOCK DATA FOR ALL SECTIONS ---
+        const recentlyPlayedData = [
+            { id: 'rp1', title: 'Study Lo-fi', artist: 'Lo-fi Girl', category: 'Music', mood: 'Focus', img: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=200&auto=format&fit=crop&q=80' },
+            { id: 'rp2', title: 'Chill Beats', artist: 'Spotify Curated', category: 'Music', mood: 'Chill', img: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=200&auto=format&fit=crop&q=80' },
+            { id: 'rp3', title: 'Liked Songs', artist: '428 tracks', category: 'Music', mood: 'Chill', isLikedCover: true },
+            { id: 'rp4', title: 'Old School Jams', artist: '90s Classics', category: 'Music', mood: 'Party', img: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=200&auto=format&fit=crop&q=80' },
+            { id: 'rp5', title: 'Himmat Radio', artist: 'Daily Motivation', category: 'Podcasts', mood: 'Workout', img: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=200&auto=format&fit=crop&q=80' },
+            { id: 'rp6', title: 'Indie Folk', artist: 'Acoustic Mornings', category: 'Music', mood: 'Chill', img: 'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=200&auto=format&fit=crop&q=80' }
+        ];
+
+        const pinnedMixesData = [
+            { id: 'pm1', title: 'Rob Bailey Gym', artist: 'Kill ROB Bailey', category: 'Music', mood: 'Workout', img: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=160&auto=format&fit=crop&q=80' },
+            { id: 'pm2', title: 'Liked Songs', artist: 'Your Favorites', category: 'Music', mood: 'Chill', isLikedCover: true },
+            { id: 'pm3', title: 'Jai Siya Ram', artist: 'Spiritual Chants', category: 'Music', mood: 'Devotional', img: 'https://images.unsplash.com/photo-1545127398-14699f92334b?w=160&auto=format&fit=crop&q=80' },
+            { id: 'pm4', title: 'Teenage Dream Radio', artist: 'Pop Anthems', category: 'Music', mood: 'Party', img: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=160&auto=format&fit=crop&q=80' },
+            { id: 'pm5', title: 'Sigma Male Songs 2024', artist: 'Phonk & Bass', category: 'Music', mood: 'Workout', img: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=160&auto=format&fit=crop&q=80' },
+            { id: 'pm6', title: 'Intense Studying', artist: 'Deep Concentration', category: 'Podcasts', mood: 'Focus', img: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=160&auto=format&fit=crop&q=80' }
+        ];
+
+        const moreLikeData = [
+            { id: 'ml1', title: 'stupid i miss u', artist: 'Single • Forrest Nolan', category: 'Music', mood: 'Late Night', img: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=240&auto=format&fit=crop&q=80' },
+            { id: 'ml2', title: 'Folk Pop', artist: 'Benson Boone, Gracie Abrams, Mark Ambor', category: 'Music', mood: 'Chill', img: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=240&auto=format&fit=crop&q=80' },
+            { id: 'ml3', title: 'Indie Chill', artist: 'Stephen Dawes, Jeremy Zucker, Chelsea Cutler', category: 'Music', mood: 'Late Night', img: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=240&auto=format&fit=crop&q=80' }
+        ];
+
+        const trendingSongsData = [
+            { id: 'tr1', rank: 1, title: 'Unstoppable', artist: 'The Movers', category: 'Music', mood: 'Workout', img: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=120&auto=format&fit=crop&q=80' },
+            { id: 'tr2', rank: 2, title: 'Nightfall', artist: 'Dreamer', category: 'Music', mood: 'Late Night', img: 'https://images.unsplash.com/photo-1507838153414-b4b713384a76?w=120&auto=format&fit=crop&q=80' },
+            { id: 'tr3', rank: 3, title: 'Vibe Check', artist: 'Selector', category: 'Music', mood: 'Party', img: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&auto=format&fit=crop&q=80' },
+            { id: 'tr4', rank: 4, title: 'Midnight Drive', artist: 'Neon Pulse', category: 'Music', mood: 'Late Night', img: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=120&auto=format&fit=crop&q=80' }
+        ];
+
+        const moodsData = [
+            { name: 'Chill', emoji: '😌', gradient: 'from-sky-500 to-cyan-600' },
+            { name: 'Workout', emoji: '💪', gradient: 'from-amber-500 to-orange-600' },
+            { name: 'Party', emoji: '🎉', gradient: 'from-pink-500 to-rose-600' },
+            { name: 'Focus', emoji: '💡', gradient: 'from-indigo-500 to-purple-600' },
+            { name: 'Late Night', emoji: '🌙', gradient: 'from-violet-600 to-slate-800' },
+            { name: 'Devotional', emoji: '🪔', gradient: 'from-yellow-500 to-amber-700' }
+        ];
+
+        const jumpBackData = [
+            { id: 'jb1', title: 'Motivation Mix', artist: 'High Energy • Workout & Hustle', category: 'Music', mood: 'Workout', img: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=300&auto=format&fit=crop&q=80' },
+            { id: 'jb2', title: 'This Is Vancouver Sleep Clinic', artist: 'Ambient Indie & Atmospheric', category: 'Music', mood: 'Focus', img: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=300&auto=format&fit=crop&q=80' }
+        ];
+
+        // --- STATE ---
+        let state = {
+            searchQuery: '',
+            selectedCategory: 'All', // All, Music, Podcasts
+            selectedMood: null,      // null or mood name
+            isPlaying: false,
+            progress: 34,
+            isLiked: false,
+            currentTrack: {
+                title: 'Progress',
+                artist: 'Kill ROB Bailey',
+                img: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=120&auto=format&fit=crop&q=80'
+            },
+            greetingIndex: 0
+        };
+
+        const greetings = [
+            { label: 'Evening', text: 'Good Evening, Alex!' },
+            { label: 'Morning', text: 'Good Morning, Alex!' },
+            { label: 'Afternoon', text: 'Good Afternoon, Alex!' }
+        ];
+
+        // --- DOM ELEMENTS ---
+        const searchInput = document.getElementById('searchInput');
+        const clearSearchBtn = document.getElementById('clearSearchBtn');
+        const greetingText = document.getElementById('greetingText');
+        const timeBadge = document.getElementById('timeBadge');
+        const cycleGreetingBtn = document.getElementById('cycleGreetingBtn');
+        const activeFilterBanner = document.getElementById('activeFilterBanner');
+        const filterStatusText = document.getElementById('filterStatusText');
+        const resetAllBtn = document.getElementById('resetAllBtn');
+
+        // --- HELPER: FILTER CHECK ---
+        function matchesFilters(item) {
+            const q = state.searchQuery.trim().toLowerCase();
+            const matchSearch = !q || 
+                item.title.toLowerCase().includes(q) || 
+                item.artist.toLowerCase().includes(q) || 
+                (item.mood && item.mood.toLowerCase().includes(q));
+            
+            const matchCategory = state.selectedCategory === 'All' || item.category === state.selectedCategory;
+            const matchMood = !state.selectedMood || item.mood === state.selectedMood;
+
+            return matchSearch && matchCategory && matchMood;
+        }
+
+        // --- PLAY TRACK FUNCTION ---
+        function playTrack(title, artist, img) {
+            state.currentTrack = {
+                title,
+                artist,
+                img: img || 'https://images.unsplash.com/photo-1614680376593-902f74cf0d41?w=120&auto=format&fit=crop&q=80'
+            };
+            state.isPlaying = true;
+            state.progress = 12;
+
+            document.getElementById('playerTitle').textContent = state.currentTrack.title;
+            document.getElementById('playerArtist').textContent = state.currentTrack.artist;
+            document.getElementById('playerCover').src = state.currentTrack.img;
+            document.getElementById('progressFill').style.width = `${state.progress}%`;
+
+            updatePlayerUI();
+            showToast(`Playing "${title}"`);
+        }
+
+        function updatePlayerUI() {
+            const icon = document.getElementById('playPauseIcon');
+            const eq = document.getElementById('eqVisualizer');
+            if (state.isPlaying) {
+                icon.className = 'fa-solid fa-pause text-xs';
+                eq.classList.remove('hidden');
+                eq.classList.add('flex');
+            } else {
+                icon.className = 'fa-solid fa-play text-xs ml-0.5';
+                eq.classList.add('hidden');
+                eq.classList.remove('flex');
+            }
+        }
+
+        // --- RENDER FUNCTIONS ---
+        function renderAll() {
+            // Update filter banner visibility
+            if (state.selectedMood || state.searchQuery.trim() !== '') {
+                activeFilterBanner.classList.remove('hidden');
+                activeFilterBanner.classList.add('flex');
+                const parts = [];
+                if (state.selectedMood) parts.push(`Mood: ${state.selectedMood}`);
+                if (state.searchQuery.trim()) parts.push(`"${state.searchQuery.trim()}"`);
+                filterStatusText.textContent = `Filtered by ${parts.join(' • ')}`;
+            } else {
+                activeFilterBanner.classList.add('hidden');
+                activeFilterBanner.classList.remove('flex');
+            }
+
+            let totalVisible = 0;
+
+            // 1. Recently Played
+            const filteredRP = recentlyPlayedData.filter(matchesFilters);
+            const rpSec = document.getElementById('recentlyPlayedSection');
+            if (filteredRP.length > 0) {
+                rpSec.classList.remove('hidden');
+                totalVisible += filteredRP.length;
+                document.getElementById('recentlyPlayedList').innerHTML = filteredRP.map(item => `
+                    <div onclick="playTrack('${item.title.replace(/'/g, "\\'")}', '${item.artist.replace(/'/g, "\\'")}', '${item.img || ''}')" class="w-[92px] flex-shrink-0 cursor-pointer group">
+                        <div class="relative w-[92px] h-[92px] rounded-lg overflow-hidden mb-1.5 shadow-md bg-spotifyCard">
+                            ${item.isLikedCover 
+                                ? `<div class="w-full h-full bg-gradient-to-br from-indigo-600 via-purple-600 to-blue-400 flex items-center justify-center"><i class="fa-solid fa-heart text-white text-2xl"></i></div>`
+                                : `<img src="${item.img}" onerror="this.src='https://placehold.co/120x120/282828/FFFFFF?text=♪'" alt="${item.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">`
+                            }
+                            <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <span class="w-8 h-8 rounded-full bg-spotifyGreen text-black flex items-center justify-center shadow-lg">
+                                    <i class="fa-solid fa-play text-xs ml-0.5"></i>
+                                </span>
+                            </div>
+                        </div>
+                        <p class="text-[11px] font-semibold text-white truncate group-hover:text-spotifyGreen transition-colors">${item.title}</p>
+                        <p class="text-[10px] text-spotifySubtext truncate">${item.artist}</p>
+                    </div>
+                `).join('');
+            } else {
+                rpSec.classList.add('hidden');
+            }
+
+            // 2. Top Pinned Mixes
+            const filteredPM = pinnedMixesData.filter(matchesFilters);
+            const pmSec = document.getElementById('pinnedMixesSection');
+            if (filteredPM.length > 0) {
+                pmSec.classList.remove('hidden');
+                totalVisible += filteredPM.length;
+                document.getElementById('pinnedMixesGrid').innerHTML = filteredPM.map(item => `
+                    <div onclick="playTrack('${item.title.replace(/'/g, "\\'")}', '${item.artist.replace(/'/g, "\\'")}', '${item.img || ''}')" class="bg-spotifyCard hover:bg-spotifyCardHover rounded-md overflow-hidden flex items-center gap-2.5 pr-2 cursor-pointer transition-colors group">
+                        <div class="w-12 h-12 flex-shrink-0">
+                            ${item.isLikedCover 
+                                ? `<div class="w-full h-full bg-gradient-to-br from-indigo-600 to-purple-400 flex items-center justify-center"><i class="fa-solid fa-heart text-white text-sm"></i></div>`
+                                : `<img src="${item.img}" onerror="this.src='https://placehold.co/80x80/282828/FFFFFF?text=♪'" alt="${item.title}" class="w-full h-full object-cover">`
+                            }
+                        </div>
+                        <p class="text-xs font-bold text-white leading-snug line-clamp-2 flex-1 group-hover:text-spotifyGreen transition-colors">${item.title}</p>
+                    </div>
+                `).join('');
+            } else {
+                pmSec.classList.add('hidden');
+            }
+
+            // 3. More like Stephen Dawes
+            const filteredML = moreLikeData.filter(matchesFilters);
+            const mlSec = document.getElementById('moreLikeSection');
+            if (filteredML.length > 0) {
+                mlSec.classList.remove('hidden');
+                totalVisible += filteredML.length;
+                document.getElementById('moreLikeList').innerHTML = filteredML.map(item => `
+                    <div onclick="playTrack('${item.title.replace(/'/g, "\\'")}', '${item.artist.replace(/'/g, "\\'")}', '${item.img}')" class="w-[140px] flex-shrink-0 cursor-pointer group">
+                        <div class="relative w-[140px] h-[140px] rounded-lg overflow-hidden mb-2 bg-spotifyCard shadow-lg">
+                            <img src="${item.img}" onerror="this.src='https://placehold.co/160x160/282828/FFFFFF?text=♪'" alt="${item.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                            <button class="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-spotifyGreen text-black flex items-center justify-center shadow-xl opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all">
+                                <i class="fa-solid fa-play text-xs ml-0.5"></i>
+                            </button>
+                        </div>
+                        <p class="text-xs font-bold text-white truncate">${item.title}</p>
+                        <p class="text-[11px] text-spotifySubtext line-clamp-2 leading-tight mt-0.5">${item.artist}</p>
+                    </div>
+                `).join('');
+            } else {
+                mlSec.classList.add('hidden');
+            }
+
+            // 4. Trending Songs
+            const filteredTR = trendingSongsData.filter(matchesFilters);
+            const trSec = document.getElementById('trendingSection');
+            if (filteredTR.length > 0) {
+                trSec.classList.remove('hidden');
+                totalVisible += filteredTR.length;
+                document.getElementById('trendingList').innerHTML = filteredTR.map(item => `
+                    <div onclick="playTrack('${item.title.replace(/'/g, "\\'")}', '${item.artist.replace(/'/g, "\\'")}', '${item.img}')" class="flex items-center justify-between bg-spotifyCard/60 hover:bg-spotifyCard p-2 rounded-xl cursor-pointer transition-all group">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="flex flex-col items-center justify-center w-5 text-center">
+                                <i class="fa-solid fa-caret-up text-spotifyGreen text-xs leading-none"></i>
+                                <span class="text-xs font-extrabold text-white leading-tight">${item.rank}</span>
+                            </div>
+                            <img src="${item.img}" onerror="this.src='https://placehold.co/80x80/282828/FFFFFF?text=♪'" alt="${item.title}" class="w-11 h-11 rounded-md object-cover flex-shrink-0">
+                            <div class="min-w-0">
+                                <p class="text-xs font-bold text-white truncate group-hover:text-spotifyGreen transition-colors">${item.title}</p>
+                                <p class="text-[11px] text-spotifySubtext truncate">${item.artist}</p>
+                            </div>
+                        </div>
+                        <button class="w-8 h-8 rounded-full bg-white/10 group-hover:bg-spotifyGreen text-white group-hover:text-black flex items-center justify-center transition-colors flex-shrink-0">
+                            <i class="fa-solid fa-play text-[11px] ml-0.5"></i>
+                        </button>
+                    </div>
+                `).join('');
+            } else {
+                trSec.classList.add('hidden');
+            }
+
+            // 5. Moods & Genres Pills (Always visible so user can switch moods easily)
+            document.getElementById('moodPillsContainer').innerHTML = moodsData.map(m => {
+                const isSelected = state.selectedMood === m.name;
+                return `
+                    <button onclick="toggleMood('${m.name}')" class="flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold text-white bg-gradient-to-r ${m.gradient} ${isSelected ? 'ring-2 ring-white scale-105 shadow-lg' : 'opacity-90 hover:opacity-100'} transition-all flex items-center gap-1.5">
+                        <span>${m.name}</span>
+                        <span>${m.emoji}</span>
+                    </button>
+                `;
+            }).join('');
+
+            // 6. Jump back in
+            const filteredJB = jumpBackData.filter(matchesFilters);
+            const jbSec = document.getElementById('jumpBackSection');
+            if (filteredJB.length > 0) {
+                jbSec.classList.remove('hidden');
+                totalVisible += filteredJB.length;
+                document.getElementById('jumpBackGrid').innerHTML = filteredJB.map(item => `
+                    <div onclick="playTrack('${item.title.replace(/'/g, "\\'")}', '${item.artist.replace(/'/g, "\\'")}', '${item.img}')" class="bg-spotifyCard/70 hover:bg-spotifyCard rounded-xl p-2.5 cursor-pointer transition-all group">
+                        <div class="relative aspect-square rounded-lg overflow-hidden mb-2">
+                            <img src="${item.img}" onerror="this.src='https://placehold.co/200x200/282828/FFFFFF?text=♪'" alt="${item.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                            <span class="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-spotifyGreen text-black flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                                <i class="fa-solid fa-play text-xs ml-0.5"></i>
+                            </span>
+                        </div>
+                        <p class="text-xs font-bold text-white truncate">${item.title}</p>
+                        <p class="text-[10px] text-spotifySubtext truncate mt-0.5">${item.artist}</p>
+                    </div>
+                `).join('');
+            } else {
+                jbSec.classList.add('hidden');
+            }
+
+            // Toggle Empty State
+            const emptyState = document.getElementById('emptyState');
+            if (totalVisible === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+            }
+        }
+
+        // --- INTERACTION HANDLERS ---
+        window.toggleMood = function(moodName) {
+            state.selectedMood = (state.selectedMood === moodName) ? null : moodName;
+            renderAll();
+        };
+
+        searchInput.addEventListener('input', (e) => {
+            state.searchQuery = e.target.value;
+            clearSearchBtn.classList.toggle('hidden', !state.searchQuery);
+            renderAll();
+        });
+
+        clearSearchBtn.addEventListener('click', () => {
+            state.searchQuery = '';
+            searchInput.value = '';
+            clearSearchBtn.classList.add('hidden');
+            renderAll();
+        });
+
+        resetAllBtn.addEventListener('click', () => {
+            state.selectedMood = null;
+            state.searchQuery = '';
+            searchInput.value = '';
+            clearSearchBtn.classList.add('hidden');
+            renderAll();
+        });
+
+        // Category Pills
+        document.querySelectorAll('.cat-pill').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.cat-pill').forEach(b => {
+                    b.classList.remove('bg-spotifyGreen', 'text-black');
+                    b.classList.add('bg-spotifyCard', 'text-white');
+                });
+                btn.classList.remove('bg-spotifyCard', 'text-white');
+                btn.classList.add('bg-spotifyGreen', 'text-black');
+                state.selectedCategory = btn.dataset.cat;
+                renderAll();
+            });
+        });
+
+        // Greeting Time Cycle
+        cycleGreetingBtn.addEventListener('click', () => {
+            state.greetingIndex = (state.greetingIndex + 1) % greetings.length;
+            greetingText.textContent = greetings[state.greetingIndex].text;
+            timeBadge.textContent = greetings[state.greetingIndex].label;
+        });
+
+        // Mini-Player Controls
+        document.getElementById('playPauseBtn').addEventListener('click', () => {
+            state.isPlaying = !state.isPlaying;
+            updatePlayerUI();
+        });
+
+        document.getElementById('likeTrackBtn').addEventListener('click', function() {
+            state.isLiked = !state.isLiked;
+            const icon = this.querySelector('i');
+            if (state.isLiked) {
+                icon.className = 'fa-solid fa-circle-check text-spotifyGreen';
+                showToast('Added to Liked Songs');
+            } else {
+                icon.className = 'fa-solid fa-circle-plus';
+                showToast('Removed from Liked Songs');
+            }
+        });
+
+        document.getElementById('progressBarContainer').addEventListener('click', function(e) {
+            const rect = this.getBoundingClientRect();
+            const pct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+            state.progress = pct;
+            document.getElementById('progressFill').style.width = `${pct}%`;
+        });
+
+        // Simulated playback progress ticker
+        setInterval(() => {
+            if (state.isPlaying) {
+                state.progress = (state.progress + 0.5) % 100;
+                document.getElementById('progressFill').style.width = `${state.progress}%`;
+            }
+        }, 500);
+
+        // Bottom Navigation Tabs
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.nav-tab').forEach(t => {
+                    t.classList.remove('text-white');
+                    t.classList.add('text-spotifySubtext');
+                });
+                tab.classList.remove('text-spotifySubtext');
+                tab.classList.add('text-white');
+
+                if (tab.dataset.nav === 'Search') {
+                    searchInput.focus();
+                } else if (tab.dataset.nav === 'Home') {
+                    document.getElementById('mainFeed').scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    showToast(`${tab.dataset.nav} view selected`);
+                }
+            });
+        });
+
+        function showToast(msg) {
+            const toast = document.getElementById('toastMsg');
+            toast.textContent = msg;
+            toast.classList.remove('opacity-0');
+            clearTimeout(window.toastTimer);
+            window.toastTimer = setTimeout(() => {
+                toast.classList.add('opacity-0');
+            }, 2000);
+        }
+
+        // Initial render
+        renderAll();
+    </script>
+</body>
+</html>
