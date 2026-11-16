@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOP Virtual Travel Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        glassDark: 'rgba(15, 23, 42, 0.75)',
+                        glassBorder: 'rgba(56, 189, 248, 0.2)',
+                        neonCyan: '#38bdf8',
+                        neonPurple: '#c084fc'
+                    },
+                    boxShadow: {
+                        glow: '0 0 25px -5px rgba(56, 189, 248, 0.3)',
+                        glowIntense: '0 0 35px 0px rgba(56, 189, 248, 0.5)'
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at 50% 30%, #0f172a 0%, #020617 100%);
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(56, 189, 248, 0.15);
+        }
+        .glass-panel-active {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(56, 189, 248, 0.5);
+            box-shadow: 0 0 30px rgba(56, 189, 248, 0.25);
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(56, 189, 248, 0.3);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(56, 189, 248, 0.6);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-cyan-500 selection:text-black">
+
+    <!-- Top Navigation Bar -->
+    <header class="w-full px-8 py-5 flex items-center justify-between glass-panel border-b border-cyan-500/10 z-30">
+        <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-2">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center shadow-glow">
+                    <i class="fa-solid fa-earth-americas text-white text-lg"></i>
+                </div>
+                <h1 class="text-xl font-bold tracking-wider bg-gradient-to-r from-cyan-400 to-indigo-300 bg-clip-text text-transparent">MOP</h1>
+            </div>
+            <span class="text-xs uppercase px-3 py-1 rounded-full bg-cyan-950/80 text-cyan-400 border border-cyan-500/30 tracking-widest font-medium hidden sm:inline-block">Virtual Portal v2.4</span>
+        </div>
+
+        <div class="flex-1 max-w-xl mx-8 hidden md:block">
+            <div class="relative">
+                <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-cyan-400/70 text-sm"></i>
+                <input type="text" id="globalSearchInput" placeholder="Search destinations, landmarks, or immersive biotopes..." class="w-full bg-slate-900/80 border border-slate-700/60 rounded-full py-2.5 pl-11 pr-4 text-sm focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all text-slate-200 placeholder-slate-500">
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-4">
+            <button class="w-10 h-10 rounded-full glass-panel flex items-center justify-center hover:border-cyan-400 hover:text-cyan-400 transition-all relative" title="Notifications">
+                <i class="fa-regular fa-bell text-sm"></i>
+                <span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+            </button>
+            <button class="w-10 h-10 rounded-full glass-panel flex items-center justify-center hover:border-cyan-400 hover:text-cyan-400 transition-all" title="User Profile">
+                <i class="fa-regular fa-user text-sm"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Desktop Dashboard Layout -->
+    <main class="flex-1 p-6 lg:p-8 max-w-[1700px] w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- Left Sidebar: Filters & Controls -->
+        <aside class="lg:col-span-3 space-y-6">
+            <div class="glass-panel rounded-2xl p-5 space-y-6">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                    <h2 class="text-sm font-semibold tracking-wide uppercase text-cyan-400 flex items-center space-x-2">
+                        <i class="fa-solid fa-sliders text-xs"></i>
+                        <span>Discovery Filters</span>
+                    </h2>
+                    <button id="resetFiltersBtn" class="text-xs text-slate-400 hover:text-cyan-400 transition-colors">Reset</button>
+                </div>
+
+                <!-- Continent Filter -->
+                <div class="space-y-2">
+                    <label class="text-xs font-medium text-slate-300">Continent</label>
+                    <div class="relative">
+                        <select id="continentSelect" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-cyan-400 text-slate-200 appearance-none cursor-pointer">
+                            <option value="All">All Continents</option>
+                            <option value="Asia">Asia</option>
+                            <option value="Africa">Africa</option>
+                            <option value="Europe">Europe</option>
+                            <option value="Australia">Australia & Oceania</option>
+                            <option value="Americas">Americas</option>
+                        </select>
+                        <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none"></i>
+                    </div>
+                </div>
+
+                <!-- Activity Type Filter -->
+                <div class="space-y-3">
+                    <label class="text-xs font-medium text-slate-300">Activity Experience</label>
+                    <div class="space-y-2" id="activityRadioGroup">
+                        <label class="flex items-center space-x-3 p-2.5 rounded-xl bg-slate-900/40 border border-slate-800 hover:border-cyan-500/40 cursor-pointer transition-all">
+                            <input type="radio" name="activity" value="All" checked class="text-cyan-500 focus:ring-0 bg-slate-800 border-slate-700">
+                            <span class="text-sm text-slate-200">All Activities</span>
+                        </label>
+                        <label class="flex items-center space-x-3 p-2.5 rounded-xl bg-slate-900/40 border border-slate-800 hover:border-cyan-500/40 cursor-pointer transition-all">
+                            <input type="radio" name="activity" value="Adventure" class="text-cyan-500 focus:ring-0 bg-slate-800 border-slate-700">
+                            <span class="text-sm text-slate-200">Adventure & Safari</span>
+                        </label>
+                        <label class="flex items-center space-x-3 p-2.5 rounded-xl bg-slate-900/40 border border-slate-800 hover:border-cyan-500/40 cursor-pointer transition-all">
+                            <input type="radio" name="activity" value="Relaxing" class="text-cyan-500 focus:ring-0 bg-slate-800 border-slate-700">
+                            <span class="text-sm text-slate-200">Relaxing & Heritage</span>
+                        </label>
+                        <label class="flex items-center space-x-3 p-2.5 rounded-xl bg-slate-900/40 border border-slate-800 hover:border-cyan-500/40 cursor-pointer transition-all">
+                            <input type="radio" name="activity" value="Underwater" class="text-cyan-500 focus:ring-0 bg-slate-800 border-slate-700">
+                            <span class="text-sm text-slate-200">Underwater Exploration</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Duration Slider -->
+                <div class="space-y-3 pt-2">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="font-medium text-slate-300">Min. Virtual Duration</span>
+                        <span id="durationVal" class="text-cyan-400 font-semibold">All Lengths</span>
+                    </div>
+                    <input type="range" id="durationRange" min="15" max="120" step="15" value="120" class="w-full accent-cyan-400 bg-slate-800 rounded-lg cursor-pointer h-2">
+                </div>
+            </div>
+
+            <!-- Quick Stats Card -->
+            <div class="glass-panel rounded-2xl p-5 space-y-4">
+                <h3 class="text-xs font-semibold tracking-wide uppercase text-slate-400">Simulation Status</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800/80">
+                        <span class="text-xs text-slate-400 block">Bandwidth</span>
+                        <span class="text-base font-bold text-cyan-400 mt-1 block">4.8 Gbps</span>
+                    </div>
+                    <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800/80">
+                        <span class="text-xs text-slate-400 block">Latency</span>
+                        <span class="text-base font-bold text-emerald-400 mt-1 block">4.2 ms</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Center Hub: Destination Tiles Grid -->
+        <section class="lg:col-span-6 space-y-5">
+            <div class="glass-panel rounded-2xl p-6 relative overflow-hidden">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold tracking-tight text-white flex items-center space-x-2">
+                            <span>Virtual Discovery Portal</span>
+                            <span class="text-xs bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 px-2 py-0.5 rounded-md font-mono" id="destCount">6 Available</span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">Select any destination to instantly launch 3D immersive mode</p>
+                    </div>
+                    <div class="flex items-center space-x-2 bg-slate-900/80 p-1 rounded-xl border border-slate-800">
+                        <button class="px-3 py-1.5 rounded-lg text-xs font-medium bg-cyan-500 text-slate-950 shadow-sm transition-all">Grid View</button>
+                        <button class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-all">Globe</button>
+                    </div>
+                </div>
+
+                <!-- Grid of Destinations -->
+                <div id="destinationsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[620px] overflow-y-auto pr-2">
+                    <!-- Dynamic destination cards inserted via JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Sidebar: Controls, View Modes & Favorites -->
+        <aside class="lg:col-span-3 space-y-6">
+            
+            <!-- View Mode Control Panel -->
+            <div class="glass-panel rounded-2xl p-5 space-y-5">
+                <h3 class="text-xs font-semibold tracking-wide uppercase text-cyan-400 flex items-center space-x-2">
+                    <i class="fa-solid fa-cube text-xs"></i>
+                    <span>Immersive View Mode</span>
+                </h3>
+
+                <!-- Circular Controller Wheel UI -->
+                <div class="relative w-48 h-48 mx-auto bg-slate-950/80 rounded-full border border-cyan-500/30 flex items-center justify-center shadow-glow">
+                    <div class="absolute inset-2 rounded-full border border-slate-800 flex items-center justify-center"></div>
+                    <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-cyan-600 to-indigo-600 shadow-glow flex items-center justify-center z-10 cursor-pointer hover:scale-105 transition-transform" id="centerControlBtn">
+                        <i class="fa-solid fa-vr-cardboard text-white text-xl"></i>
+                    </div>
+
+                    <!-- Mode Selectors Around Wheel -->
+                    <button class="absolute top-2 left-1/2 -translate-x-1/2 text-[10px] uppercase font-bold tracking-wider text-cyan-300 hover:text-white bg-slate-900/90 px-2.5 py-1 rounded-full border border-cyan-500/40 transition-all view-mode-btn active" data-mode="360 Video">
+                        360° Video
+                    </button>
+                    <button class="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] uppercase font-bold tracking-wider text-slate-400 hover:text-white bg-slate-900/90 px-2.5 py-1 rounded-full border border-slate-700 transition-all view-mode-btn" data-mode="Interactive Walkthrough">
+                        Walkthrough
+                    </button>
+                    <button class="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] uppercase font-bold tracking-wider text-slate-400 hover:text-white bg-slate-900/90 px-2.5 py-1 rounded-full border border-slate-700 transition-all view-mode-btn" data-mode="Guided Tour">
+                        Guided
+                    </button>
+                    <button class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] uppercase font-bold tracking-wider text-slate-400 hover:text-white bg-slate-900/90 px-2.5 py-1 rounded-full border border-slate-700 transition-all view-mode-btn" data-mode="Spatial Audio">
+                        Spatial
+                    </button>
+                </div>
+                <div class="text-center">
+                    <span id="activeModeLabel" class="text-xs text-slate-300 font-medium">Active Mode: <strong class="text-cyan-400">360° Video Stream</strong></span>
+                </div>
+            </div>
+
+            <!-- My Favorites / Pinned Destinations -->
+            <div class="glass-panel rounded-2xl p-5 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-semibold tracking-wide uppercase text-slate-400 flex items-center space-x-2">
+                        <i class="fa-solid fa-bookmark text-xs text-cyan-400"></i>
+                        <span>My Favorites</span>
+                    </h3>
+                    <span id="favoritesCount" class="text-[10px] bg-slate-800 text-cyan-400 px-2 py-0.5 rounded-full font-mono">2 Saved</span>
+                </div>
+                <div id="favoritesList" class="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
+                    <!-- Inserted via JS -->
+                </div>
+            </div>
+
+        </aside>
+    </main>
+
+    <!-- Footer Note -->
+    <footer class="w-full py-4 text-center text-xs text-slate-500 border-t border-slate-900">
+        MOP Virtual Reality & Cloud Engine &bull; Optimized for Desktop Workstations & Laptops
+    </footer>
+
+    <!-- Immersive Launch Modal / Simulation Overlay -->
+    <div id="simulationModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-6 hidden opacity-0 transition-opacity duration-300">
+        <div class="glass-panel-active rounded-3xl max-w-4xl w-full p-8 relative space-y-6 shadow-glowIntense border-cyan-500/50">
+            <button id="closeModalBtn" class="absolute top-6 right-6 w-10 h-10 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white hover:border-cyan-400 transition-all">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <div class="flex items-center space-x-4">
+                <div id="modalBadge" class="px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-semibold border border-cyan-500/40">Loading Environment...</div>
+                <h2 id="modalTitle" class="text-2xl font-bold text-white tracking-wide">Kyoto Bamboo Sanctuary</h2>
+            </div>
+
+            <div class="relative w-full h-[360px] bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center group">
+                <img id="modalImage" src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=1200&auto=format&fit=crop" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt="Destination View">
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex flex-col justify-end p-6">
+                    <p id="modalDesc" class="text-sm text-slate-300 max-w-2xl">Historic temples, towering bamboo stalks, and tranquil walking trails with 3D spatial acoustics enabled.</p>
+                </div>
+                <div class="absolute top-4 left-4 flex items-center space-x-2 bg-slate-950/80 px-3 py-1.5 rounded-xl border border-cyan-500/30 text-xs text-cyan-300 font-mono">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    <span>LIVE 8K STREAM • 60 FPS</span>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-2">
+                <div class="flex items-center space-x-3">
+                    <button class="px-5 py-2.5 rounded-xl bg-cyan-500 text-slate-950 font-semibold text-sm hover:bg-cyan-400 shadow-glow transition-all flex items-center space-x-2">
+                        <i class="fa-solid fa-vr-cardboard"></i>
+                        <span>Enter VR Headset Mode</span>
+                    </button>
+                    <button id="favoriteToggleModalBtn" class="px-4 py-2.5 rounded-xl glass-panel text-slate-200 text-sm hover:border-cyan-400 transition-all flex items-center space-x-2">
+                        <i class="fa-regular fa-bookmark text-cyan-400"></i>
+                        <span id="favoriteBtnText">Save to Favorites</span>
+                    </button>
+                </div>
+                <span class="text-xs text-slate-400">Press ESC or click close to exit simulation</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        const destinations = [
+            {
+                id: 1,
+                title: "Kyoto Bamboo Sanctuary",
+                continent: "Asia",
+                activity: "Relaxing",
+                duration: 60,
+                rating: 4.9,
+                image: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=800&auto=format&fit=crop",
+                desc: "Historic temples & bamboo forests with soothing wind acoustics.",
+                isFavorite: true
+            },
+            {
+                id: 2,
+                title: "Serengeti Wildlife Safari",
+                continent: "Africa",
+                activity: "Adventure",
+                duration: 90,
+                rating: 4.8,
+                image: "https://images.unsplash.com/photo-1516426122078-c23e76319801?q=80&w=800&auto=format&fit=crop",
+                desc: "Wildlife safari experience across the great savanna plains.",
+                isFavorite: false
+            },
+            {
+                id: 3,
+                title: "Paris City of Lights",
+                continent: "Europe",
+                activity: "Relaxing",
+                duration: 45,
+                rating: 4.7,
+                image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=800&auto=format&fit=crop",
+                desc: "Iconic European landmarks, cafes, and evening river cruises.",
+                isFavorite: true
+            },
+            {
+                id: 4,
+                title: "Great Barrier Reef",
+                continent: "Australia",
+                activity: "Underwater",
+                duration: 75,
+                rating: 4.9,
+                image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=800&auto=format&fit=crop",
+                desc: "Underwater coral reef exploration with marine wildlife encounters.",
+                isFavorite: false
+            },
+            {
+                id: 5,
+                title: "Swiss Alps Alpine Trek",
+                continent: "Europe",
+                activity: "Adventure",
+                duration: 120,
+                rating: 4.9,
+                image: "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?q=80&w=800&auto=format&fit=crop",
+                desc: "Snowy peaks, crystal lakes, and high-altitude mountain trails.",
+                isFavorite: false
+            },
+            {
+                id: 6,
+                title: "Machu Picchu Ruins",
+                continent: "Americas",
+                activity: "Adventure",
+                duration: 60,
+                rating: 4.8,
+                image: "https://images.unsplash.com/photo-1526392060635-9d6019884377?q=80&w=800&auto=format&fit=crop",
+                desc: "Ancient Incan citadel set high in the Andes mountains.",
+                isFavorite: false
+            }
+        ];
+
+        let activeFilters = {
+            continent: 'All',
+            activity: 'All',
+            duration: 120,
+            search: ''
+        };
+
+        let activeModalDest = null;
+
+        const gridEl = document.getElementById('destinationsGrid');
+        const countEl = document.getElementById('destCount');
+        const continentSelect = document.getElementById('continentSelect');
+        const activityRadios = document.querySelectorAll('input[name="activity"]');
+        const durationRange = document.getElementById('durationRange');
+        const durationVal = document.getElementById('durationVal');
+        const globalSearchInput = document.getElementById('globalSearchInput');
+        const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+        const favoritesList = document.getElementById('favoritesList');
+        const favoritesCount = document.getElementById('favoritesCount');
+
+        const simulationModal = document.getElementById('simulationModal');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalImage = document.getElementById('modalImage');
+        const modalDesc = document.getElementById('modalDesc');
+        const favoriteToggleModalBtn = document.getElementById('favoriteToggleModalBtn');
+        const favoriteBtnText = document.getElementById('favoriteBtnText');
+
+        function renderDestinations() {
+            const filtered = destinations.filter(dest => {
+                const matchContinent = activeFilters.continent === 'All' || dest.continent === activeFilters.continent;
+                const matchActivity = activeFilters.activity === 'All' || dest.activity === activeFilters.activity;
+                const matchDuration = dest.duration <= parseInt(activeFilters.duration);
+                const matchSearch = dest.title.toLowerCase().includes(activeFilters.search.toLowerCase()) || 
+                                    dest.desc.toLowerCase().includes(activeFilters.search.toLowerCase());
+                return matchContinent && matchActivity && matchDuration && matchSearch;
+            });
+
+            countEl.textContent = `${filtered.length} Available`;
+
+            if (filtered.length === 0) {
+                gridEl.innerHTML = `
+                    <div class="col-span-2 py-16 text-center space-y-3">
+                        <i class="fa-solid fa-compass text-3xl text-slate-600 animate-spin"></i>
+                        <p class="text-sm text-slate-400">No destinations match your active filters.</p>
+                        <button onclick="resetAllFilters()" class="text-xs text-cyan-400 underline hover:text-cyan-300">Reset Filters</button>
+                    </div>
+                `;
+                return;
+            }
+
+            gridEl.innerHTML = filtered.map(dest => `
+                <div onclick="openSimulation(${dest.id})" class="group bg-slate-900/70 border border-slate-800 rounded-2xl overflow-hidden hover:border-cyan-500/50 hover:shadow-glow transition-all duration-300 cursor-pointer flex flex-col justify-between">
+                    <div class="relative h-40 overflow-hidden">
+                        <img src="${dest.image}" alt="${dest.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent"></div>
+                        <div class="absolute top-3 left-3 flex items-center space-x-1.5 bg-slate-950/80 px-2.5 py-1 rounded-lg border border-cyan-500/30 text-[10px] text-cyan-300">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <span>${dest.continent}</span>
+                        </div>
+                        <button onclick="event.stopPropagation(); toggleFavorite(${dest.id})" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-slate-950/80 border border-slate-700 flex items-center justify-center text-xs ${dest.isFavorite ? 'text-cyan-400 border-cyan-500/50' : 'text-slate-400 hover:text-white'} transition-all">
+                            <i class="fa-${dest.isFavorite ? 'solid' : 'regular'} fa-bookmark"></i>
+                        </button>
+                        <div class="absolute bottom-3 left-3 flex items-center space-x-2">
+                            <span class="text-xs font-bold text-white">${dest.title}</span>
+                        </div>
+                    </div>
+                    <div class="p-4 space-y-2">
+                        <p class="text-xs text-slate-400 line-clamp-1">${dest.desc}</p>
+                        <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-[11px] text-slate-400">
+                            <span class="flex items-center space-x-1 text-amber-400 font-medium">
+                                <i class="fa-solid fa-star"></i>
+                                <span>${dest.rating}</span>
+                            </span>
+                            <span class="flex items-center space-x-1">
+                                <i class="fa-regular fa-clock"></i>
+                                <span>${dest.duration}m tour</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            renderFavorites();
+        }
+
+        function renderFavorites() {
+            const favs = destinations.filter(d => d.isFavorite);
+            favoritesCount.textContent = `${favs.length} Saved`;
+
+            if (favs.length === 0) {
+                favoritesList.innerHTML = `<p class="text-xs text-slate-500 text-center py-4">No favorites saved yet.</p>`;
+                return;
+            }
+
+            favoritesList.innerHTML = favs.map(fav => `
+                <div onclick="openSimulation(${fav.id})" class="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80 hover:border-cyan-500/40 cursor-pointer transition-all">
+                    <div class="flex items-center space-x-3 overflow-hidden">
+                        <img src="${fav.image}" class="w-10 h-10 rounded-lg object-cover flex-shrink-0" alt="${fav.title}">
+                        <div class="overflow-hidden">
+                            <h4 class="text-xs font-semibold text-white truncate">${fav.title}</h4>
+                            <span class="text-[10px] text-cyan-400">${fav.continent}</span>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-xs text-slate-600 pr-1"></i>
+                </div>
+            `).join('');
+        }
+
+        window.toggleFavorite = function(id) {
+            const dest = destinations.find(d => d.id === id);
+            if (dest) {
+                dest.isFavorite = !dest.isFavorite;
+                renderDestinations();
+                if (activeModalDest && activeModalDest.id === id) {
+                    updateModalFavoriteState();
+                }
+            }
+        }
+
+        window.openSimulation = function(id) {
+            const dest = destinations.find(d => d.id === id);
+            if (!dest) return;
+            activeModalDest = dest;
+
+            modalTitle.textContent = dest.title;
+            modalImage.src = dest.image;
+            modalDesc.textContent = dest.desc;
+            updateModalFavoriteState();
+
+            simulationModal.classList.remove('hidden');
+            setTimeout(() => {
+                simulationModal.classList.remove('opacity-0');
+            }, 10);
+        }
+
+        function updateModalFavoriteState() {
+            if (!activeModalDest) return;
+            if (activeModalDest.isFavorite) {
+                favoriteBtnText.textContent = "Saved in Favorites";
+                favoriteToggleModalBtn.querySelector('i').className = "fa-solid fa-bookmark text-cyan-400";
+            } else {
+                favoriteBtnText.textContent = "Save to Favorites";
+                favoriteToggleModalBtn.querySelector('i').className = "fa-regular fa-bookmark text-cyan-400";
+            }
+        }
+
+        function closeModal() {
+            simulationModal.classList.add('opacity-0');
+            setTimeout(() => {
+                simulationModal.classList.add('hidden');
+            }, 300);
+        }
+
+        closeModalBtn.addEventListener('click', closeModal);
+        simulationModal.addEventListener('click', (e) => {
+            if (e.target === simulationModal) closeModal();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        favoriteToggleModalBtn.addEventListener('click', () => {
+            if (activeModalDest) {
+                toggleFavorite(activeModalDest.id);
+            }
+        });
+
+        continentSelect.addEventListener('change', (e) => {
+            activeFilters.continent = e.target.value;
+            renderDestinations();
+        });
+
+        activityRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    activeFilters.activity = e.target.value;
+                    renderDestinations();
+                }
+            });
+        });
+
+        durationRange.addEventListener('input', (e) => {
+            const val = e.target.value;
+            activeFilters.duration = val;
+            durationVal.textContent = val >= 120 ? 'All Lengths' : `Up to ${val} mins`;
+            renderDestinations();
+        });
+
+        globalSearchInput.addEventListener('input', (e) => {
+            activeFilters.search = e.target.value;
+            renderDestinations();
+        });
+
+        window.resetAllFilters = function() {
+            activeFilters = { continent: 'All', activity: 'All', duration: 120, search: '' };
+            continentSelect.value = 'All';
+            activityRadios[0].checked = true;
+            durationRange.value = 120;
+            durationVal.textContent = 'All Lengths';
+            globalSearchInput.value = '';
+            renderDestinations();
+        }
+
+        resetFiltersBtn.addEventListener('click', resetAllFilters);
+
+        const viewModeBtns = document.querySelectorAll('.view-mode-btn');
+        const activeModeLabel = document.getElementById('activeModeLabel');
+
+        viewModeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                viewModeBtns.forEach(b => {
+                    b.classList.remove('active', 'bg-cyan-950', 'text-cyan-300', 'border-cyan-500/40');
+                    b.classList.add('text-slate-400', 'border-slate-700');
+                });
+                btn.classList.add('active', 'bg-cyan-950', 'text-cyan-300', 'border-cyan-500/40');
+                btn.classList.remove('text-slate-400', 'border-slate-700');
+                
+                const modeName = btn.getAttribute('data-mode');
+                activeModeLabel.innerHTML = `Active Mode: <strong class="text-cyan-400">${modeName} Stream</strong>`;
+            });
+        });
+
+        window.onload = function() {
+            renderDestinations();
+        }
+    </script>
+</body>
+</html>
